@@ -30,3 +30,4 @@ inicia sesión, registra gastos por categoría y ve un resumen mensual.
 - No hacer commit ni push.
 
 ## Lecciones aprendidas
+- Un registro que no existe responde 404, y el modo debug solo se activa con FLASK_DEBUG=1.

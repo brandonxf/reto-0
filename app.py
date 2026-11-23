@@ -3,7 +3,7 @@ import sqlite3
 from datetime import date
 
 from dotenv import load_dotenv
-from flask import Flask, g, redirect, render_template, request, session, url_for
+from flask import Flask, abort, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
@@ -150,6 +150,8 @@ def editar(gasto_id):
         db.commit()
         return redirect(url_for("index"))
     gasto = db.execute("SELECT * FROM gastos WHERE id = ?", (gasto_id,)).fetchone()
+    if gasto is None:
+        abort(404)
     return render_template("editar.html", gasto=gasto)
 
 
@@ -164,4 +166,4 @@ def eliminar(gasto_id):
 
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1")
