@@ -33,3 +33,23 @@ def test_un_usuario_no_puede_ver_ni_modificar_el_gasto_de_otro(cliente):
         "SELECT descripcion FROM gastos WHERE id = 1"
     ).fetchone()
     assert descripcion == ("Almuerzo",)
+
+
+def test_gasto_con_datos_invalidos_se_rechaza_y_no_se_guarda(cliente):
+    import sqlite3
+
+    import app as app_module
+
+    registrar_y_entrar(cliente, "usuario1", "Clave123*")
+    valido = {"descripcion": "Almuerzo", "monto": "18500", "categoria": "Otros", "fecha": "2026-11-20"}
+    invalidos = [
+        {**valido, "descripcion": ""},
+        {**valido, "descripcion": "A" * 600},
+        {**valido, "monto": ""},
+        {**valido, "monto": "-5"},
+    ]
+    for datos in invalidos:
+        assert cliente.post("/gastos/nuevo", data=datos).status_code == 400
+
+    guardados = sqlite3.connect(app_module.DATABASE).execute("SELECT COUNT(*) FROM gastos").fetchone()
+    assert guardados == (0,)

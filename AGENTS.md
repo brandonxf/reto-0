@@ -32,3 +32,4 @@ inicia sesión, registra gastos por categoría y ve un resumen mensual.
 ## Lecciones aprendidas
 - Un registro que no existe responde 404, y el modo debug solo se activa con FLASK_DEBUG=1.
 - Antes de mostrar, editar o eliminar un registro, el servidor verifica que pertenece al usuario de la sesión.
+- Todo formulario se valida en el servidor: campos obligatorios, monto numérico mayor que cero y longitud máxima.
