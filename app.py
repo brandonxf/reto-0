@@ -136,22 +136,26 @@ def nuevo():
 @login_required
 def editar(gasto_id):
     db = get_db()
+    gasto = db.execute(
+        "SELECT * FROM gastos WHERE id = ? AND user_id = ?", (gasto_id, session["user_id"])
+    ).fetchone()
+    if gasto is None:
+        abort(404)
     if request.method == "POST":
         db.execute(
-            "UPDATE gastos SET descripcion = ?, monto = ?, categoria = ?, fecha = ? WHERE id = ?",
+            "UPDATE gastos SET descripcion = ?, monto = ?, categoria = ?, fecha = ? "
+            "WHERE id = ? AND user_id = ?",
             (
                 request.form["descripcion"],
                 float(request.form["monto"]),
                 request.form["categoria"],
                 request.form["fecha"],
                 gasto_id,
+                session["user_id"],
             ),
         )
         db.commit()
         return redirect(url_for("index"))
-    gasto = db.execute("SELECT * FROM gastos WHERE id = ?", (gasto_id,)).fetchone()
-    if gasto is None:
-        abort(404)
     return render_template("editar.html", gasto=gasto)
 
 
@@ -159,8 +163,12 @@ def editar(gasto_id):
 @login_required
 def eliminar(gasto_id):
     db = get_db()
-    db.execute("DELETE FROM gastos WHERE id = ?", (gasto_id,))
+    borrado = db.execute(
+        "DELETE FROM gastos WHERE id = ? AND user_id = ?", (gasto_id, session["user_id"])
+    )
     db.commit()
+    if borrado.rowcount == 0:
+        abort(404)
     return redirect(url_for("index"))
 
 
