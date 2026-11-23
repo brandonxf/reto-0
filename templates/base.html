@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Control de gastos</title>
+  <style>
+    body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; color: #222; }
+    nav { display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
+    input, select, button { padding: .4rem; margin: .2rem 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { border-bottom: 1px solid #ddd; padding: .4rem; text-align: left; }
+    .error { color: #b00020; }
+  </style>
+</head>
+<body>
+  <nav>
+    <strong>Control de gastos</strong>
+    <span>
+      {% if session.username %}{{ session.username }} · <a href="{{ url_for('logout') }}">Cerrar sesión</a>{% endif %}
+    </span>
+  </nav>
+  {% block contenido %}{% endblock %}
+</body>
+</html>

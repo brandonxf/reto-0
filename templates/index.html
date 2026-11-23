@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block contenido %}
+<h2>Nuevo gasto</h2>
+<form method="post" action="{{ url_for('nuevo') }}">
+  <input name="descripcion" placeholder="Descripción">
+  <input name="monto" type="number" step="0.01" placeholder="Monto">
+  <select name="categoria">
+    <option>Alimentación</option><option>Transporte</option><option>Vivienda</option>
+    <option>Ocio</option><option>Salud</option><option>Otros</option>
+  </select>
+  <input name="fecha" type="date" value="{{ hoy }}">
+  <button>Agregar</button>
+</form>
+
+<h2>Gastos</h2>
+<table>
+  <tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th><th></th></tr>
+  {% for g in gastos %}
+  <tr>
+    <td>{{ g.fecha }}</td><td>{{ g.descripcion }}</td><td>{{ g.categoria }}</td><td>{{ '%.2f'|format(g.monto) }}</td>
+    <td>
+      <a href="{{ url_for('editar', gasto_id=g.id) }}">Editar</a>
+      <form method="post" action="{{ url_for('eliminar', gasto_id=g.id) }}" style="display:inline"><button>Eliminar</button></form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="5">Aún no hay gastos.</td></tr>
+  {% endfor %}
+</table>
+
+<h2>Resumen mensual</h2>
+<table>
+  <tr><th>Mes</th><th>Categoría</th><th>Total</th></tr>
+  {% for r in resumen %}
+  <tr><td>{{ r.mes }}</td><td>{{ r.categoria }}</td><td>{{ '%.2f'|format(r.total) }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}
