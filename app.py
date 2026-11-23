@@ -3,7 +3,7 @@ import sqlite3
 from datetime import date
 
 from dotenv import load_dotenv
-from flask import Flask, g, redirect, render_template, request, session, url_for
+from flask import Flask, abort, g, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
@@ -114,19 +114,31 @@ def index():
     return render_template("index.html", gastos=gastos, resumen=resumen, hoy=date.today().isoformat())
 
 
+def validar_gasto(form):
+    descripcion = form.get("descripcion", "").strip()
+    categoria = form.get("categoria", "").strip()
+    fecha = form.get("fecha", "").strip()
+    if not descripcion or len(descripcion) > 100:
+        abort(400, "La descripción es obligatoria y admite máximo 100 caracteres")
+    try:
+        monto = float(form.get("monto", ""))
+    except ValueError:
+        abort(400, "El monto debe ser un número")
+    if monto <= 0:
+        abort(400, "El monto debe ser mayor que cero")
+    if not categoria or not fecha:
+        abort(400, "La categoría y la fecha son obligatorias")
+    return descripcion, monto, categoria, fecha
+
+
 @app.route("/gastos/nuevo", methods=["POST"])
 @login_required
 def nuevo():
+    descripcion, monto, categoria, fecha = validar_gasto(request.form)
     db = get_db()
     db.execute(
         "INSERT INTO gastos (user_id, descripcion, monto, categoria, fecha) VALUES (?, ?, ?, ?, ?)",
-        (
-            session["user_id"],
-            request.form["descripcion"],
-            float(request.form["monto"]),
-            request.form["categoria"],
-            request.form["fecha"],
-        ),
+        (session["user_id"], descripcion, monto, categoria, fecha),
     )
     db.commit()
     return redirect(url_for("index"))
@@ -136,20 +148,20 @@ def nuevo():
 @login_required
 def editar(gasto_id):
     db = get_db()
+    gasto = db.execute(
+        "SELECT * FROM gastos WHERE id = ? AND user_id = ?", (gasto_id, session["user_id"])
+    ).fetchone()
+    if gasto is None:
+        abort(404)
     if request.method == "POST":
+        descripcion, monto, categoria, fecha = validar_gasto(request.form)
         db.execute(
-            "UPDATE gastos SET descripcion = ?, monto = ?, categoria = ?, fecha = ? WHERE id = ?",
-            (
-                request.form["descripcion"],
-                float(request.form["monto"]),
-                request.form["categoria"],
-                request.form["fecha"],
-                gasto_id,
-            ),
+            "UPDATE gastos SET descripcion = ?, monto = ?, categoria = ?, fecha = ? "
+            "WHERE id = ? AND user_id = ?",
+            (descripcion, monto, categoria, fecha, gasto_id, session["user_id"]),
         )
         db.commit()
         return redirect(url_for("index"))
-    gasto = db.execute("SELECT * FROM gastos WHERE id = ?", (gasto_id,)).fetchone()
     return render_template("editar.html", gasto=gasto)
 
 
@@ -157,11 +169,15 @@ def editar(gasto_id):
 @login_required
 def eliminar(gasto_id):
     db = get_db()
-    db.execute("DELETE FROM gastos WHERE id = ?", (gasto_id,))
+    borrado = db.execute(
+        "DELETE FROM gastos WHERE id = ? AND user_id = ?", (gasto_id, session["user_id"])
+    )
     db.commit()
+    if borrado.rowcount == 0:
+        abort(404)
     return redirect(url_for("index"))
 
 
 if __name__ == "__main__":
     init_db()
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1")
